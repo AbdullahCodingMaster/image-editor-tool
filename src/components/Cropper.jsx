@@ -21,6 +21,14 @@ const ImageCropper = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [isEnabled, setIsEnabled] = useState(true);
 
+  const [xPosition, setXPosition] = useState(0);
+  const [yPosition, setYPosition] = useState(0);
+  const [width, setWidth] = useState(200);
+  const [height, setHeight] = useState(200);
+  const [rotation, setRotation] = useState(0);
+  const [scaleX, setScaleX] = useState(1);
+  const [scaleY, setScaleY] = useState(1);
+
   const cropperRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -59,6 +67,26 @@ const ImageCropper = () => {
     }
   };
 
+  const updateCropper = () => {
+    if (cropperRef.current) {
+      const cropper = cropperRef.current.cropper;
+      cropper.setData({
+        x: xPosition,
+        y: yPosition,
+        width: width,
+        height: height,
+        rotate: rotation,
+        scaleX: scaleX,
+        scaleY: scaleY,
+      });
+    }
+  };
+
+  const handleInputChange = (e, setter) => {
+    setter(Number(e.target.value));
+    updateCropper();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -66,6 +94,22 @@ const ImageCropper = () => {
       transition={{ duration: 0.5 }}
       className="flex flex-col items-center bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-2xl mx-auto my-12 space-y-6 text-white"
     >
+      <motion.div className="relative w-full h-[400px] rounded-lg overflow-hidden border border-gray-600">
+        <Cropper
+          ref={cropperRef}
+          src={image}
+          className="w-full h-full"
+          aspectRatio={1}
+          guides={false}
+          background={true}
+          zoomable={true}
+          disabled={!isEnabled}
+          viewMode={1} // Prevents the cropper from moving outside the image bounds
+          dragMode="move" // Allows dragging the cropper within the image
+          cropBoxResizable={true} // Prevent resizing beyond the image bounds
+        />
+      </motion.div>
+
       <input
         type="file"
         accept="image/*"
@@ -73,19 +117,6 @@ const ImageCropper = () => {
         className="hidden"
         onChange={handleImageUpload}
       />
-
-      <motion.div className="relative w-full h-[400px] rounded-lg overflow-hidden border border-gray-600">
-        <Cropper
-          ref={cropperRef}
-          src={image}
-          className="w-full h-full"
-          aspectRatio={1}
-          guides={true}
-          background={true}
-          zoomable={true}
-          disabled={!isEnabled}
-        />
-      </motion.div>
 
       <div className="grid grid-cols-3 md:grid-cols-5 gap-4 w-full">
         {[
@@ -104,43 +135,55 @@ const ImageCropper = () => {
           {
             icon: FiArrowLeft,
             label: "Left",
-            action: () => cropperRef.current.cropper.move(-10, 0),
+            action: () => {
+              setXPosition(xPosition - 10);
+              updateCropper();
+            },
             color: "bg-gray-700",
           },
           {
             icon: FiArrowRight,
             label: "Right",
-            action: () => cropperRef.current.cropper.move(10, 0),
+            action: () => {
+              setXPosition(xPosition + 10);
+              updateCropper();
+            },
             color: "bg-gray-700",
           },
           {
             icon: FiArrowUp,
             label: "Up",
-            action: () => cropperRef.current.cropper.move(0, -10),
+            action: () => {
+              setYPosition(yPosition - 10);
+              updateCropper();
+            },
             color: "bg-gray-700",
           },
           {
             icon: FiArrowDown,
             label: "Down",
-            action: () => cropperRef.current.cropper.move(0, 10),
+            action: () => {
+              setYPosition(yPosition + 10);
+              updateCropper();
+            },
             color: "bg-gray-700",
           },
           {
             icon: FiRotateCw,
-            label: "Flip H",
-            action: () =>
-              cropperRef.current.cropper.scaleX(
-                -cropperRef.current.cropper.getData().scaleX
-              ),
+            label: "Rotate",
+            action: () => {
+              setRotation(rotation + 90);
+              updateCropper();
+            },
             color: "bg-gray-700",
           },
           {
             icon: FiRotateCcw,
-            label: "Flip V",
-            action: () =>
-              cropperRef.current.cropper.scaleY(
-                -cropperRef.current.cropper.getData().scaleY
-              ),
+            label: "Rotate Reverse",
+            action: () => {
+              setRotation(rotation - 90);
+              updateCropper();
+            },
             color: "bg-gray-700",
           },
           {
@@ -159,42 +202,124 @@ const ImageCropper = () => {
           <motion.button
             key={index}
             onClick={action}
-            className={`flex flex-col items-center justify-center p-3 rounded-lg font-semibold transition ${color} hover:scale-110`}
+            className={`flex flex-col items-center justify-center p-2 rounded-lg font-semibold text-white shadow-md hover:shadow-lg transition-all ${color} transform hover:scale-105`}
           >
-            <Icon className="text-2xl" />
-            {label}
+            <Icon className="text-xl" />
+            <span className="text-sm">{label}</span>
           </motion.button>
         ))}
       </div>
 
+      {/* Inputs for Transformations */}
+      <div className="space-y-4 w-full mt-4">
+        <div className="flex justify-between">
+          <label className="text-white">X:</label>
+          <input
+            type="number"
+            value={xPosition}
+            onChange={(e) => handleInputChange(e, setXPosition)}
+            className="w-1/2 bg-gray-700 text-white p-2 rounded"
+          />
+        </div>
+
+        <div className="flex justify-between">
+          <label className="text-white">Y:</label>
+          <input
+            type="number"
+            value={yPosition}
+            onChange={(e) => handleInputChange(e, setYPosition)}
+            className="w-1/2 bg-gray-700 text-white p-2 rounded"
+          />
+        </div>
+
+        <div className="flex justify-between">
+          <label className="text-white">Width:</label>
+          <input
+            type="number"
+            value={width}
+            onChange={(e) => handleInputChange(e, setWidth)}
+            className="w-1/2 bg-gray-700 text-white p-2 rounded"
+          />
+        </div>
+
+        <div className="flex justify-between">
+          <label className="text-white">Height:</label>
+          <input
+            type="number"
+            value={height}
+            onChange={(e) => handleInputChange(e, setHeight)}
+            className="w-1/2 bg-gray-700 text-white p-2 rounded"
+          />
+        </div>
+
+        <div className="flex justify-between">
+          <label className="text-white">Rotate:</label>
+          <input
+            type="number"
+            value={rotation}
+            onChange={(e) => handleInputChange(e, setRotation)}
+            className="w-1/2 bg-gray-700 text-white p-2 rounded"
+          />
+        </div>
+
+        <div className="flex justify-between">
+          <label className="text-white">ScaleX:</label>
+          <input
+            type="number"
+            step="0.1"
+            value={scaleX}
+            onChange={(e) => handleInputChange(e, setScaleX)}
+            className="w-1/2 bg-gray-700 text-white p-2 rounded"
+          />
+        </div>
+
+        <div className="flex justify-between">
+          <label className="text-white">ScaleY:</label>
+          <input
+            type="number"
+            step="0.1"
+            value={scaleY}
+            onChange={(e) => handleInputChange(e, setScaleY)}
+            className="w-1/2 bg-gray-700 text-white p-2 rounded"
+          />
+        </div>
+      </div>
+
+      {/* Modal to Show Cropped Image */}
       <AnimatePresence>
-        {modalOpen && croppedImage && (
-          <motion.div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center">
-            <div className="bg-white p-6 rounded-lg shadow-lg relative w-96 text-black">
+        {modalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+            onClick={() => setModalOpen(false)}
+          >
+            <div className="relative bg-white p-8 rounded-lg max-w-lg w-full">
               <button
-                className="absolute top-2 right-2 text-gray-600 hover:text-red-500"
+                className="absolute top-2 right-2 text-black"
                 onClick={() => setModalOpen(false)}
               >
-                <FiX size={24} />
+                <FiX className="text-xl" />
               </button>
-              <h2 className="text-xl font-semibold mb-4 text-center">
-                Cropped Image
-              </h2>
               <img
                 src={croppedImage}
                 alt="Cropped"
-                className="w-full rounded-lg shadow-md"
+                className="w-full max-h-[500px] object-cover"
               />
-              <div className="mt-4 flex gap-2 justify-center">
-                {["png", "jpg", "webp", "bmp", "gif"].map((format) => (
-                  <button
-                    key={format}
-                    onClick={() => downloadImage(format)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg"
-                  >
-                    {format.toUpperCase()}
-                  </button>
-                ))}
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => downloadImage("png")}
+                  className="bg-green-500 text-white p-3 rounded-lg"
+                >
+                  Download PNG
+                </button>
+                <button
+                  onClick={() => downloadImage("jpeg")}
+                  className="bg-blue-500 text-white p-3 rounded-lg ml-4"
+                >
+                  Download JPEG
+                </button>
               </div>
             </div>
           </motion.div>
