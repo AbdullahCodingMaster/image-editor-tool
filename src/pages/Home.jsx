@@ -1,42 +1,29 @@
-import { useState } from "react";
 import ImageCropper from "../components/Cropper";
-import PropTypes from "prop-types";
 
 const Home = () => {
-  const [image, setImage] = useState(null);
-
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => setImage(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-800 text-white">
-      <h1 className="text-3xl font-bold mb-6">Image Cropper</h1>
+    <div className="min-h-screen flex flex-col bg-gray-900 text-white">
+      {/* Header Section */}
+      <header className="w-full bg-blue-700 py-8 px-12">
+        <h1 className="text-4xl font-bold text-left text-white">
+          Smart Cropper
+        </h1>
+        <p className="text-gray-300 text-left mt-2 text-lg">
+          Intelligent and user-friendly cropping tool.
+        </p>
+      </header>
 
-      {!image ? (
-        <label className="cursor-pointer bg-blue-600 px-6 py-3 rounded-lg hover:bg-blue-700">
-          Upload Image
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-        </label>
-      ) : (
-        <ImageCropper image={image} />
-      )}
+      {/* Main Content Section */}
+      <section className="">
+        <ImageCropper />
+      </section>
+
+      {/* Footer Section */}
+      <footer className="w-full bg-blue-700 text-center py-6 text-gray-200">
+        © {new Date().getFullYear()} All Rights Reserved.
+      </footer>
     </div>
   );
-};
-
-Home.propTypes = {
-  image: PropTypes.string,
 };
 
 export default Home;

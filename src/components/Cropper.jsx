@@ -1,173 +1,207 @@
 import { useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
-import { FiZoomIn, FiZoomOut, FiRefreshCcw, FiDownload } from "react-icons/fi";
-import PropTypes from "prop-types";
+import defaultImg from "../assets/default-image.webp";
+import {
+  FiRefreshCcw,
+  FiUpload,
+  FiX,
+  FiArrowUp,
+  FiArrowDown,
+  FiArrowLeft,
+  FiArrowRight,
+  FiRotateCcw,
+  FiRotateCw,
+} from "react-icons/fi";
 
-const ImageCropper = ({ image }) => {
+const ImageCropper = () => {
+  const [image, setImage] = useState(defaultImg);
   const [croppedImage, setCroppedImage] = useState(null);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [flipX, setFlipX] = useState(false);
-  const [flipY, setFlipY] = useState(false);
-  const [selectedFormat, setSelectedFormat] = useState("png");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(true);
 
   const cropperRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // Crop the image
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(URL.createObjectURL(file));
+      setCroppedImage(null);
+    }
+  };
+
   const handleCrop = () => {
     if (cropperRef.current) {
       const cropper = cropperRef.current.cropper;
-      if (cropper) {
-        const canvas = cropper.getCroppedCanvas();
+      const canvas = cropper.getCroppedCanvas();
+      if (canvas) {
         setCroppedImage(canvas.toDataURL());
-      } else {
-        console.error("Cropper instance not found!");
+        setModalOpen(true);
       }
     }
   };
 
-  // Zoom the image
-  const handleZoom = (zoomIn) => {
-    const newZoomLevel = zoomIn ? zoomLevel + 0.1 : zoomLevel - 0.1;
-    setZoomLevel(newZoomLevel);
-    cropperRef.current.cropper.zoom(zoomIn ? 0.1 : -0.1);
-  };
+  const downloadImage = (format) => {
+    if (cropperRef.current) {
+      const cropper = cropperRef.current.cropper;
+      const canvas = cropper.getCroppedCanvas();
 
-  // Flip the image horizontally
-  const handleFlipX = () => {
-    setFlipX(!flipX);
-    cropperRef.current.cropper.scaleX(flipX ? 1 : -1);
-  };
-
-  // Flip the image vertically
-  const handleFlipY = () => {
-    setFlipY(!flipY);
-    cropperRef.current.cropper.scaleY(flipY ? 1 : -1);
-  };
-
-  // Reset the image to its default state
-  const handleReset = () => {
-    setZoomLevel(1);
-    setFlipX(false);
-    setFlipY(false);
-    setCroppedImage(null);
-    cropperRef.current.cropper.reset();
-  };
-
-  // Download the cropped image
-  const handleDownload = (format) => {
-    if (croppedImage) {
-      const link = document.createElement("a");
-      link.href = croppedImage;
-      link.download = `cropped-image.${format}`;
-      link.click();
+      if (canvas) {
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL(`image/${format}`);
+        link.download = `cropped-image.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     }
   };
 
   return (
-    <div className="flex flex-col items-center bg-gray-900 p-6 rounded-xl shadow-xl w-[90%] md:w-[80%] lg:w-[60%] mx-auto my-8 space-y-6">
-      {/* Image Display */}
-      <div className="relative w-full h-[400px] md:h-[500px] bg-black rounded-lg overflow-hidden flex justify-center items-center">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      className="flex flex-col items-center bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-2xl mx-auto my-12 space-y-6 text-white"
+    >
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={handleImageUpload}
+      />
+
+      <motion.div className="relative w-full h-[400px] rounded-lg overflow-hidden border border-gray-600">
         <Cropper
           ref={cropperRef}
           src={image}
-          style={{ height: "100%", width: "100%" }}
+          className="w-full h-full"
           aspectRatio={1}
-          guides={false}
-          background={false}
+          guides={true}
+          background={true}
           zoomable={true}
-          rotatable={true}
-          scalable={true}
+          disabled={!isEnabled}
         />
-      </div>
+      </motion.div>
 
-      {/* Image Controls */}
-      <div className="flex flex-wrap gap-4 p-4 w-full justify-center md:justify-start text-white">
-        <button
-          className="bg-gray-700 p-3 rounded-xl flex items-center gap-2 hover:bg-gray-600 transition duration-300 ease-in-out"
-          onClick={() => handleZoom(true)}
-        >
-          <FiZoomIn className="text-xl" /> Zoom In
-        </button>
-        <button
-          className="bg-gray-700 p-3 rounded-xl flex items-center gap-2 hover:bg-gray-600 transition duration-300 ease-in-out"
-          onClick={() => handleZoom(false)}
-        >
-          <FiZoomOut className="text-xl" /> Zoom Out
-        </button>
-        <button
-          className="bg-gray-700 p-3 rounded-xl flex items-center gap-2 hover:bg-gray-600 transition duration-300 ease-in-out"
-          onClick={handleReset}
-        >
-          <FiRefreshCcw className="text-xl" /> Reset
-        </button>
-        <button
-          className="bg-gray-700 p-3 rounded-xl flex items-center gap-2 hover:bg-gray-600 transition duration-300 ease-in-out"
-          onClick={handleCrop}
-        >
-          <FiDownload className="text-xl" /> Crop
-        </button>
-      </div>
-
-      {/* Flip Controls */}
-      <div className="flex justify-center gap-8 w-full">
-        <button
-          className="bg-yellow-600 text-white px-6 py-3 rounded-xl flex items-center gap-3 hover:bg-yellow-700 transition duration-300 ease-in-out"
-          onClick={handleFlipX}
-        >
-          Flip Horizontal
-        </button>
-        <button
-          className="bg-yellow-600 text-white px-6 py-3 rounded-xl flex items-center gap-3 hover:bg-yellow-700 transition duration-300 ease-in-out"
-          onClick={handleFlipY}
-        >
-          Flip Vertical
-        </button>
-      </div>
-
-      {/* Image Preview */}
-      {croppedImage && (
-        <div className="mt-6 w-full text-center">
-          <h3 className="text-white text-2xl font-semibold mb-4">
-            Cropped Preview:
-          </h3>
-          <img
-            src={croppedImage}
-            alt="Cropped"
-            className="mx-auto rounded-lg shadow-md border border-gray-600 max-w-full"
-          />
-          <div className="mt-4">
-            <label className="text-white text-lg font-medium">
-              Select Format:
-            </label>
-            <select
-              value={selectedFormat}
-              onChange={(e) => setSelectedFormat(e.target.value)}
-              className="mt-2 bg-gray-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="png">PNG</option>
-              <option value="jpg">JPG</option>
-              <option value="jpeg">JPEG</option>
-              <option value="gif">GIF</option>
-              <option value="bmp">BMP</option>
-              <option value="tiff">TIFF</option>
-              <option value="webp">WEBP</option>
-            </select>
-          </div>
-          <button
-            onClick={() => handleDownload(selectedFormat)}
-            className="mt-4 bg-green-500 text-white px-6 py-3 rounded-xl hover:bg-green-600 transition duration-300 ease-in-out"
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-4 w-full">
+        {[
+          {
+            icon: FiUpload,
+            label: "Upload",
+            action: () => fileInputRef.current.click(),
+            color: "bg-blue-500",
+          },
+          {
+            icon: FiRefreshCcw,
+            label: "Reset",
+            action: () => cropperRef.current.cropper.reset(),
+            color: "bg-gray-700",
+          },
+          {
+            icon: FiArrowLeft,
+            label: "Left",
+            action: () => cropperRef.current.cropper.move(-10, 0),
+            color: "bg-gray-700",
+          },
+          {
+            icon: FiArrowRight,
+            label: "Right",
+            action: () => cropperRef.current.cropper.move(10, 0),
+            color: "bg-gray-700",
+          },
+          {
+            icon: FiArrowUp,
+            label: "Up",
+            action: () => cropperRef.current.cropper.move(0, -10),
+            color: "bg-gray-700",
+          },
+          {
+            icon: FiArrowDown,
+            label: "Down",
+            action: () => cropperRef.current.cropper.move(0, 10),
+            color: "bg-gray-700",
+          },
+          {
+            icon: FiRotateCw,
+            label: "Flip H",
+            action: () =>
+              cropperRef.current.cropper.scaleX(
+                -cropperRef.current.cropper.getData().scaleX
+              ),
+            color: "bg-gray-700",
+          },
+          {
+            icon: FiRotateCcw,
+            label: "Flip V",
+            action: () =>
+              cropperRef.current.cropper.scaleY(
+                -cropperRef.current.cropper.getData().scaleY
+              ),
+            color: "bg-gray-700",
+          },
+          {
+            icon: FiX,
+            label: isEnabled ? "Disable" : "Enable",
+            action: () => setIsEnabled(!isEnabled),
+            color: "bg-red-500",
+          },
+          {
+            icon: FiUpload,
+            label: "Crop",
+            action: handleCrop,
+            color: "bg-green-500",
+          },
+        ].map(({ icon: Icon, label, action, color }, index) => (
+          <motion.button
+            key={index}
+            onClick={action}
+            className={`flex flex-col items-center justify-center p-3 rounded-lg font-semibold transition ${color} hover:scale-110`}
           >
-            Download {selectedFormat.toUpperCase()}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
+            <Icon className="text-2xl" />
+            {label}
+          </motion.button>
+        ))}
+      </div>
 
-ImageCropper.propTypes = {
-  image: PropTypes.string.isRequired,
+      <AnimatePresence>
+        {modalOpen && croppedImage && (
+          <motion.div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center">
+            <div className="bg-white p-6 rounded-lg shadow-lg relative w-96 text-black">
+              <button
+                className="absolute top-2 right-2 text-gray-600 hover:text-red-500"
+                onClick={() => setModalOpen(false)}
+              >
+                <FiX size={24} />
+              </button>
+              <h2 className="text-xl font-semibold mb-4 text-center">
+                Cropped Image
+              </h2>
+              <img
+                src={croppedImage}
+                alt="Cropped"
+                className="w-full rounded-lg shadow-md"
+              />
+              <div className="mt-4 flex gap-2 justify-center">
+                {["png", "jpg", "webp", "bmp", "gif"].map((format) => (
+                  <button
+                    key={format}
+                    onClick={() => downloadImage(format)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg"
+                  >
+                    {format.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 };
 
 export default ImageCropper;
